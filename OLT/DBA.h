@@ -29,7 +29,10 @@ private:
 	vector<cQueue> readyQueue;
 	vector<cQueue> tempQueue;
 	vector<int> chAllocatedToOnu;
-	vector<uint32_t> onuRequestSize;
+	vector<int32_t> onuRequestSize;
+	vector<int32_t> onunow;
+	vector<int32_t> onuold;
+	vector<int32_t> grantUpold;
 	vector<simtime_t> useChAmountTimeLen;
 	vector<uint32_t> gateCountOfOnu;
 	vector<double> totalDownBufferSize;
@@ -82,9 +85,9 @@ private:
 	int32_t totalSVError;
 	int32_t totalError8to11;
 	int32_t totalSVError8to11;
-	int32_t onunow;
-	int32_t onuold;
-	int32_t grantUpold;
+	//int32_t onunow;
+	//int32_t onuold;
+	//int32_t grantUpold;
 	uint32_t cycleCount8s;
 	uint32_t cycleNum8to11;
 	uint32_t cycleCount3s;

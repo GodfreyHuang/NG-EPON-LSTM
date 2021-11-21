@@ -222,7 +222,7 @@ void DBA::GrantUpload(uint32_t idx){
 
                 //timesteps[idx][0] = onuRequestSize[idx];  //when timesteps  = 1, only use this.
 
-                LogResults o6("keras_model_2021_1110_In_DBA_1_ONUss");
+                LogResults o6("keras_model_2021_1115_In_DBA_1_ONUss");
                 const auto model = fdeep::load_model("1110_8s_U12D02_1029081model.json"); //TimeStep=2 U24D02  keras_model_TimeStepIs_2_U12D02_2021_0618.json
 
 
@@ -268,8 +268,8 @@ void DBA::GrantUpload(uint32_t idx){
                 vec.erase(vec.begin(),vec.end());
                 */
                 ///*
-                if ( onuRequestSize[idx] + 8000 < MTW )
-                    grantUp[idx] = onuRequestSize[idx] + 8000;
+                if ( onuRequestSize[idx] * 1.3 < MTW )
+                    grantUp[idx] = onuRequestSize[idx] * 1.3;
                 else
                     grantUp[idx] = MTW;
                 //*/
@@ -292,7 +292,7 @@ void DBA::GrantUpload(uint32_t idx){
     int32_t currentError = 0, averageTotalError = 0, SVError = 0, SD = 0, Rerror = 0, cycleNum = 0;
     int32_t currentError8to11 = 0, averageTotalError8to11 = 0, SVError8to11 = 0, SD8to11 = 0;
     //calculate totalError
-    onunow = onuRequestSize[idx];
+    onunow[idx] = onuRequestSize[idx];
     if (simTime() < 3)
     {
         Rerror = 0;
@@ -308,12 +308,12 @@ void DBA::GrantUpload(uint32_t idx){
             cycleNum = cycleFromZero - cycleCount3s + 1;
         }
         //calculate average.
-        Rerror = (onunow + grantUpold - onuold);
-        currentError = fabs(grantUpold - onunow);
+        Rerror = (onunow[idx] + grantUpold[idx] - onuold[idx]);
+        currentError = fabs(grantUpold[idx] - onunow[idx]);
         totalError += currentError;
         averageTotalError = totalError / cycleNum;
         //calculate SD.
-        SVError = pow(onunow - averageTotalError, 2);
+        SVError = pow(onunow[idx] - averageTotalError, 2);
         totalSVError += SVError;
         SD = sqrt(totalSVError / cycleNum);
 
@@ -333,7 +333,7 @@ void DBA::GrantUpload(uint32_t idx){
             totalError8to11 += currentError8to11;
             averageTotalError8to11 = totalError8to11 / cycleNum8to11;
             //calculate SD.
-            SVError8to11 = pow(onunow - averageTotalError8to11, 2);
+            SVError8to11 = pow(onunow[idx] - averageTotalError8to11, 2);
             totalSVError8to11 += SVError8to11;
             SD8to11 = sqrt(totalSVError8to11 / cycleNum8to11);
         }
@@ -372,9 +372,16 @@ void DBA::GrantUpload(uint32_t idx){
         op6 << "cycleNum8to11 : " << cycleNum8to11 << " currentError8to11 : "<< currentError8to11 << " averageTotalError8to11_PerCycle : " << averageTotalError8to11  << " Standard_Deviation8to11_PerCycle : " << SD8to11 << " Rerror : " << Rerror << endl;
     }
 
-    grantUpold = grantUp[idx];
-    onuold = onuRequestSize[idx];
-
+    grantUpold[idx] = grantUp[idx];
+    if (onuRequestSize[idx] <= 0)
+    {
+        onuRequestSize[idx] = 0;
+    }
+    else
+    {
+        onuold[idx] = onuRequestSize[idx];
+    }
+    //onuold[idx] = onuRequestSize[idx];
 }
 
 void DBA::GrantDownload(uint32_t idx){
