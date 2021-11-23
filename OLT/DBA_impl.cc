@@ -21,6 +21,7 @@
 #include "DBA.h"
 #include "ONUTable.h"
 #include "ONUTableEntry.h"
+#include "../ONU/Classifier.h"
 
 
 float RoundUpToXDecimalPlace(float f, int x) { // round float up to xth decimal place. example: f=1.234567, x=2, result=1.23
@@ -134,7 +135,7 @@ void DBA::ScheduleNewCycle() {
 
 		LogResults os1("ProcessReport_CycleStartTime");
 		simtime_t calCycleTime;
-		calCycleTime = cycleStartTime - lastCycleStartTime;
+		calCycleTime = onutbl-> GetEocTime();
 		totalCalTime += calCycleTime;
 		os1 << "cycleFromZero : "<< cycleFromZero << " cycleStartTime : " << cycleStartTime << " lastCycleStartTime : " << lastCycleStartTime << " singleCycleTime : " << calCycleTime << " Total: " << totalCalTime << endl;
 	}
@@ -177,6 +178,12 @@ void DBA::GrantWindowToOnu(uint32_t idx) {
 		downLarger++;
 	}
 	thisCycleTotalGrantSize += largerGrant[idx]; // for OpenChannel()
+//check ONURequestSize's number
+	LogResults optest1("ONU_16_onuRequestSize");
+	if( idx == 16 )
+    {
+	    optest1 << " cycleFromZero : " << cycleFromZero << " onuRequestSize : " << onuRequestSize[idx]  << endl;
+	}
 }
 
 void DBA::GrantUpload(uint32_t idx){
@@ -268,8 +275,8 @@ void DBA::GrantUpload(uint32_t idx){
                 vec.erase(vec.begin(),vec.end());
                 */
                 ///*
-                if ( onuRequestSize[idx] * 1.3 < MTW )
-                    grantUp[idx] = onuRequestSize[idx] * 1.3;
+                if ( onuRequestSize[idx] + 8000 < MTW )
+                    grantUp[idx] = onuRequestSize[idx] + 8000;
                 else
                     grantUp[idx] = MTW;
                 //*/
@@ -309,11 +316,12 @@ void DBA::GrantUpload(uint32_t idx){
         }
         //calculate average.
         Rerror = (onunow[idx] + grantUpold[idx] - onuold[idx]);
-        currentError = fabs(grantUpold[idx] - onunow[idx]);
+        //currentError = fabs(grantUpold[idx] - onunow[idx]);
+        currentError = fabs(onuold[idx] + Rerror - grantUpold[idx]);
         totalError += currentError;
         averageTotalError = totalError / cycleNum;
         //calculate SD.
-        SVError = pow(onunow[idx] - averageTotalError, 2);
+        SVError = pow(currentError - averageTotalError, 2);
         totalSVError += SVError;
         SD = sqrt(totalSVError / cycleNum);
 
@@ -333,7 +341,7 @@ void DBA::GrantUpload(uint32_t idx){
             totalError8to11 += currentError8to11;
             averageTotalError8to11 = totalError8to11 / cycleNum8to11;
             //calculate SD.
-            SVError8to11 = pow(onunow[idx] - averageTotalError8to11, 2);
+            SVError8to11 = pow(currentError8to11 - averageTotalError8to11, 2);
             totalSVError8to11 += SVError8to11;
             SD8to11 = sqrt(totalSVError8to11 / cycleNum8to11);
         }
@@ -369,18 +377,20 @@ void DBA::GrantUpload(uint32_t idx){
     LogResults op6("ErrorCounter_8to11_ONU16");
     if( cycleCount > 0  && idx == 16 )
     {
-        op6 << "cycleNum8to11 : " << cycleNum8to11 << " currentError8to11 : "<< currentError8to11 << " averageTotalError8to11_PerCycle : " << averageTotalError8to11  << " Standard_Deviation8to11_PerCycle : " << SD8to11 << " Rerror : " << Rerror << endl;
+        //op6 << "cycleNum8to11 : " << cycleNum8to11 << " currentError8to11 : "<< currentError8to11 << " averageTotalError8to11_PerCycle : " << averageTotalError8to11  << " Standard_Deviation8to11_PerCycle : " << SD8to11 << " Rerror : " << Rerror << endl;
+        op6 << "cycleNum8to11 : " << cycleNum8to11 << "\t grantUpold : " << grantUpold[idx] << "\t currentError8to11 : "<< currentError8to11 << "\t Rerror : " << Rerror << endl;
     }
 
     grantUpold[idx] = grantUp[idx];
     if (onuRequestSize[idx] <= 0)
     {
-        onuRequestSize[idx] = 0;
+        onuold[idx] = 0;
     }
     else
     {
         onuold[idx] = onuRequestSize[idx];
     }
+    //onuold[idx] = max(onuRequestSize[idx], 0);
     //onuold[idx] = onuRequestSize[idx];
 }
 

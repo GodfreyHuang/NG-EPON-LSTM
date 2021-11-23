@@ -4,8 +4,9 @@ out/gcc-debug//ONU/PowerControler.o: ONU/PowerControler.cc \
  ONU/../OLT/../common/LogResults.h ONU/../OLT/../common/IniParser.h \
  ONU/../OLT/../common/TemplateCollect.h ONU/../OLT/ONUTableEntry.h \
  ONU/../OLT/ONUTable.h ONU/../OLT/../LibFolder/fdeep/fdeep.hpp \
- ONU/PowerControler.h ONU/../traffic_gen/Messages/EPON_messages_m.h \
- ONU/Classifier.h ONU/Scheduler.h
+ ONU/../OLT/../ONU/Classifier.h \
+ ONU/../OLT/../ONU/../traffic_gen/Messages/EPON_messages_m.h \
+ ONU/../OLT/../ONU/PowerControler.h ONU/../OLT/../ONU/Scheduler.h
 
 ONU/../OLT/DBA.h:
 
@@ -25,10 +26,10 @@ ONU/../OLT/ONUTable.h:
 
 ONU/../OLT/../LibFolder/fdeep/fdeep.hpp:
 
-ONU/PowerControler.h:
+ONU/../OLT/../ONU/Classifier.h:
 
-ONU/../traffic_gen/Messages/EPON_messages_m.h:
+ONU/../OLT/../ONU/../traffic_gen/Messages/EPON_messages_m.h:
 
-ONU/Classifier.h:
+ONU/../OLT/../ONU/PowerControler.h:
 
-ONU/Scheduler.h:
+ONU/../OLT/../ONU/Scheduler.h:

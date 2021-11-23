@@ -11,6 +11,7 @@
 #include "ONUTable.h"
 
 #include "../LibFolder/fdeep/fdeep.hpp"
+#include "../ONU/Classifier.h"
 
 using namespace std;
 using namespace omnetpp;
@@ -81,10 +82,10 @@ private:
 	uint32_t downLarger;
 	uint32_t downBufLarger, upBufLarger;
 	uint32_t sleepNoGrantCount;
-	int32_t totalError;
-	int32_t totalSVError;
-	int32_t totalError8to11;
-	int32_t totalSVError8to11;
+	uint64_t totalError;
+	uint64_t totalSVError;
+	uint64_t totalError8to11;
+	uint64_t totalSVError8to11;
 	//int32_t onunow;
 	//int32_t onuold;
 	//int32_t grantUpold;

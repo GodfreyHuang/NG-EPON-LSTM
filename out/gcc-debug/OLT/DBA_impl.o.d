@@ -52,7 +52,9 @@ out/gcc-debug//OLT/DBA_impl.o: OLT/DBA_impl.cc \
  OLT/../common/TemplateCollect.h \
  OLT/../traffic_gen/Messages/EPON_messages_m.h OLT/DBA.h \
  OLT/../common/LogResults.h OLT/ONUTableEntry.h OLT/ONUTable.h \
- OLT/../LibFolder/fdeep/fdeep.hpp
+ OLT/../LibFolder/fdeep/fdeep.hpp OLT/../ONU/Classifier.h \
+ OLT/../ONU/../traffic_gen/Messages/EPON_messages_m.h \
+ OLT/../ONU/PowerControler.h OLT/../ONU/Scheduler.h
 
 /home/webtest/Desktop/omnetpp-5.6.1/include/omnetpp/cevent.h:
 
@@ -167,3 +169,11 @@ OLT/ONUTableEntry.h:
 OLT/ONUTable.h:
 
 OLT/../LibFolder/fdeep/fdeep.hpp:
+
+OLT/../ONU/Classifier.h:
+
+OLT/../ONU/../traffic_gen/Messages/EPON_messages_m.h:
+
+OLT/../ONU/PowerControler.h:
+
+OLT/../ONU/Scheduler.h:

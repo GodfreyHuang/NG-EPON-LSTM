@@ -241,6 +241,9 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 		{
 		    LogResults owoo("ProcessGate_ONU16_request");
 		    owoo << "cycle : " << cycle  << ", reportCycles : " << reportCycles << "\t"<< getParentModule()->getId() - 2 << "\t RequestSize : " << upQueueTotalLen - grantUpLen << "\t totalBufferSize : " << totalBufferSize<<"\t grantUpLen : "<< grantUpLen << "\t grantDownLen : "<<downstreamLen <<endl;
+
+		    LogResults owoo2("ProcessGate_ONU16_request_needTuning");
+		    owoo2 << "cycle : " << cycle  << ", reportCycles : " << reportCycles << ", needTuning : " << needTuning << endl;
 		}
 
 		if(getParentModule()->getId() - 2 != 16) //the data without ONU 16. In theory this file can be train.
@@ -248,6 +251,8 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 		    LogResults oo2("ProcessGate_ONUss_request");
 		    oo2 << "cycle : " << cycle << ", reportCycles : " << reportCycles << "\t" << getParentModule()->getId() - 2 << "\t RequestSize : " << upQueueTotalLen - grantUpLen << "\t totalBufferSize : " << totalBufferSize<<"\t grantUpLen : "<< grantUpLen << "\t grantDownLen : "<<downstreamLen <<endl;
 		}
+
+
 		///////////////////////*/
 	}
 	else if(curMode == DOZE || curMode == SLEEP){
