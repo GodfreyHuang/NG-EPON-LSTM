@@ -36,6 +36,7 @@ private:
 	uint32_t cycle;
 	///Added
 	uint32_t total_upQueueTotalLen;
+	uint32_t grantUpOld;
 	///
 	double upRateRec;
 	double totalBufferSize;

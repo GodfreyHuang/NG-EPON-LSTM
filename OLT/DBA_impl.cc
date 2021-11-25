@@ -285,8 +285,8 @@ void DBA::GrantUpload(uint32_t idx){
                     grantUp[idx] = MTW;
                 */
                 ///*
-                if ( onuRequestSize[idx] < MTW )
-                    grantUp[idx] = onuRequestSize[idx];
+                if ( onuRequestSize[idx] + 8000 < MTW )
+                    grantUp[idx] = onuRequestSize[idx] + 8000;
                 else
                     grantUp[idx] = MTW;
                 //*/
@@ -319,7 +319,7 @@ void DBA::GrantUpload(uint32_t idx){
             cycleNum = cycleFromZero - cycleCount3s + 1;
         }
         //calculate average.
-        Rerror = (onunow[idx] + grantUpold[idx] - onuold[idx]);
+        Rerror = (onunow[idx] - onuold[idx] + grantUpold[idx]);
         //currentError = fabs(grantUpold[idx] - onunow[idx]);
         currentError = fabs(onuold[idx] + Rerror - grantUpold[idx]);
         totalError += currentError;
