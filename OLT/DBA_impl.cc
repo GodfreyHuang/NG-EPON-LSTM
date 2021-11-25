@@ -143,6 +143,10 @@ void DBA::ScheduleNewCycle() {
 
 void DBA::GrantWindowToOnu(uint32_t idx) {
 // for log
+    if (idx == 16 && simTime() > 3) {
+        LogResults o16R("ONU16_onuRequestSize");
+        o16R << "cycleFromZero : " << cycleFromZero << "\t ONU16_onuRequestSize : " << onuRequestSize[idx] << endl;
+    }
 	totalReqCount[idx]++;
 	if (onuRequestSize[idx] > maxReqSizeOfOnu[idx]) {
 		maxReqSizeOfOnu[idx] = onuRequestSize[idx];
@@ -274,18 +278,18 @@ void DBA::GrantUpload(uint32_t idx){
 
                 vec.erase(vec.begin(),vec.end());
                 */
-                ///*
-                if ( onuRequestSize[idx] + 8000 < MTW )
-                    grantUp[idx] = onuRequestSize[idx] + 8000;
+                /*
+                if ( onuRequestSize[idx] * 1.3 < MTW )
+                    grantUp[idx] = onuRequestSize[idx] * 1.3;
                 else
                     grantUp[idx] = MTW;
-                //*/
-                /*
+                */
+                ///*
                 if ( onuRequestSize[idx] < MTW )
                     grantUp[idx] = onuRequestSize[idx];
                 else
                     grantUp[idx] = MTW;
-                */
+                //*/
             }
             else
             {

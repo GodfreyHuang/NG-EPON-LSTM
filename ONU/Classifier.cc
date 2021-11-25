@@ -72,6 +72,14 @@ void Classifier::handleMessage(cMessage *msg) {
 			MyPacket * pkt = check_and_cast<MyPacket *>(readyQueue.pop());
 			pkt->setSrcAddr(getParentModule()->getId());
 			pkt->setDestAddr(olt->getId());
+
+			//The doc shows how many data upload from ONU16. The numbers are as same as LocalNetwork.cc's len.
+			LogResults oBreak("ONU16_eachUploadedBytes");
+			if(getParentModule()->getId() - 2 == 16 && simTime() > 3)
+			{
+			    oBreak << " reportCycles : " << reportCycles << "\t ONU16_UploadedBytes : " << pkt->getByteLength() << endl;
+			}
+
 			if (pkt->getKind() != MPCP_TYPE)
 				totalUploadedBytes += pkt->getByteLength();
 			send(pkt, upO[onuStayChannel]);
@@ -236,6 +244,12 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 		    owyo2 << "cycle : " << cycle << ", reportCycles : " << reportCycles << "\t"<< getParentModule()->getId() - 2 << "\t" << "upQueueTotalLen : " << total_upQueueTotalLen << endl;
 		}
 		///*///////////////////// Added
+
+		if(getParentModule()->getId() - 2 == 16  && simTime() > 3) //compare with ONU16_onuRequestSize.
+		{
+		    LogResults owoo("ProcessGate_ONU16_3s_request");
+		    owoo << "cycle : " << cycle  << ", reportCycles : " << reportCycles << "\t"<< getParentModule()->getId() - 2 << "\t RequestSize : " << upQueueTotalLen - grantUpLen << "\t totalBufferSize : " << totalBufferSize<<"\t grantUpLen : "<< grantUpLen << "\t grantDownLen : "<<downstreamLen <<endl;
+		}
 
 		if(getParentModule()->getId() - 2 == 16)
 		{
