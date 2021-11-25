@@ -143,6 +143,13 @@ void LocalNetwork::generateDataFrame() {
 	uint16_t pri = intuniform(1, 1000, this->getIndex());
 	onuUpBytes += len;
 
+	//The doc shows how many data upload from ONU16. The numbers are as same as Classifier.cc's "pkt->getByteLength()".
+	LogResults oLocal("ONU16_generateDataFrame");
+	if(this->getIndex() == 16 && simTime() > 3)
+	{
+	    oLocal << " ONU16_generateDataFrame : " << len << endl;
+	}
+
 	/*
 	if (pri > 1000 - hpRatio)
 		job->setPriority(0);

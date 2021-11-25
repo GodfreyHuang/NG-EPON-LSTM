@@ -68,10 +68,18 @@ void Classifier::initialize() {
 void Classifier::handleMessage(cMessage *msg) {
 	if (msg->isSelfMessage()) {
 		if (msg == sendUpstreamEvent && !readyQueue.isEmpty()) {
-			cModule *olt = getSimulation()->getModuleByPath("EPON.olt");
+			cModule *olt = getSimulation()-> getModuleByPath("EPON.olt");
 			MyPacket * pkt = check_and_cast<MyPacket *>(readyQueue.pop());
 			pkt->setSrcAddr(getParentModule()->getId());
 			pkt->setDestAddr(olt->getId());
+
+			//The doc shows how many data upload from ONU16. The numbers are as same as LocalNetwork.cc's len.
+			LogResults oBreak("ONU16_eachUploadedBytes");
+			if(getParentModule()->getId() - 2 == 16 && simTime() > 3)
+			{
+			    oBreak << " ONU16_UploadedBytes : " << pkt->getByteLength() << endl;
+			}
+
 			if (pkt->getKind() != MPCP_TYPE)
 				totalUploadedBytes += pkt->getByteLength();
 			send(pkt, upO[onuStayChannel]);

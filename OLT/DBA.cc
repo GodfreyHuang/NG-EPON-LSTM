@@ -77,9 +77,9 @@ void DBA::initialize() {
     totalSVError8to11 = 0;
     cycleCount8s = 0;
     cycleNum8to11 = 0;
-    onunow = 0;
-    onuold = 0;
-    grantUpold = 0;
+    //onunow = 0;
+    //onuold = 0;
+    //grantUpold = 0;
     cycleCount2 = 0;
 
 
@@ -88,10 +88,14 @@ void DBA::initialize() {
 	InitVecConstant(remainSpaceOfCh, chSize, maxSizeOfACycle);
 	InitVec(useChAmountTimeLen, chSize);
 	InitVec(readyQueue, chSize);
-	InitVecConstant(onuRequestSize, onuSize, 0U);
+	//InitVecConstant(onuRequestSize, onuSize, 0U);
 	InitVecConstant(bufferSizeToMTW, onuSize, 0.0f);
 	InitVecConstant(gateCountOfOnu, onuSize, 0U);
 	InitVecConstant(totalDownBufferSize, onuSize, 0.0);
+	InitVec(onuRequestSize, onuSize);
+	InitVec(onunow, onuSize);
+	InitVec(onuold, onuSize);
+	InitVec(grantUpold, onuSize);
 
 	for (uint32_t i = 0; i != onuSize; i++) {
 		InitVec(buffer[i], 2);

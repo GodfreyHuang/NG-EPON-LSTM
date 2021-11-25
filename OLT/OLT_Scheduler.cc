@@ -85,6 +85,7 @@ OLT_Scheduler::~OLT_Scheduler() {
 
 void OLT_Scheduler::handleMessage(cMessage *msg) {
 	cGate *fromGate = msg->getArrivalGate();
+	//msg->getArrivalGate() == gate("gen")
 	if (fromGate == upI || fromGate == up2I || fromGate == up3I || fromGate == up4I || fromGate == gate("in") || fromGate == gate("in2")) { // sendDirect from ONU scheduler (upstream)
 		if ((msg->getKind() == MPCP_TYPE)) {
 			MPCP* mpcp = check_and_cast<MPCP *>(msg);
@@ -122,6 +123,13 @@ void OLT_Scheduler::handleMessage(cMessage *msg) {
 			downBytes[dest][pri] += pkt->getByteLength();
 			packetCount[dest][pri]++;
 			packetDelay[dest][pri] += simTime() - pkt->getTimestamp();
+
+			//this doc is not "the gold", but it can show how many cycle after 3s.
+		    LogResults oOLTS("ONU16_OLTScheduler");
+		    if(dest == 16)
+		    {
+		        oOLTS << " ONU16_HiPriPacketCount : " << packetCount[dest][pri] << endl;
+		    }
 
 			if (needTuning){
 				packetDelay[dest][pri] += tuningTimeLen;
