@@ -67,13 +67,13 @@ void Classifier::initialize() {
 }
 
 void Classifier::handleMessage(cMessage *msg) {
-    int i;
-    int length;
-    uint32_t singleTotalSize = 0;
-    length = readyQueue.getLength();
+    //int i;
+    //int length;
+    singleTotalSize = 0;
+    //length = readyQueue.getLength();
 	if (msg->isSelfMessage()) {
 		if (msg == sendUpstreamEvent && !readyQueue.isEmpty()) {
-		    cModule *olt = getSimulation()->getModuleByPath("EPON.olt");
+		    //cModule *olt = getSimulation()->getModuleByPath("EPON.olt");
 		    //Try to get the numbers of packets in a single cycle.
 		    /*LogResults oBreak2("ONU16_singleCyclePKTs");
 		    if(getParentModule()->getId() - 2 == 16 && simTime() > 3) {
@@ -82,7 +82,7 @@ void Classifier::handleMessage(cMessage *msg) {
 		        }
 		    }*/
 		    //length = readyQueue.getLength();
-		    for (i = 0; i < length; i++) {
+		    /*for (i = 0; i < length; i++) {
 		        MyPacket * pkt = check_and_cast<MyPacket *>(readyQueue.pop());
 		        pkt->setSrcAddr(getParentModule()->getId());
 		        pkt->setDestAddr(olt->getId());
@@ -95,14 +95,42 @@ void Classifier::handleMessage(cMessage *msg) {
 
 		        if (pkt->getKind() != MPCP_TYPE)
 		            totalUploadedBytes += pkt->getByteLength();
+
 		        send(pkt, upO[onuStayChannel]);
 		    }
 
-		    scheduleAt(simTime(), sendUpstreamEvent);
-			//cModule *olt = getSimulation()->getModuleByPath("EPON.olt");
-			/*MyPacket * pkt = check_and_cast<MyPacket *>(readyQueue.pop());
+		    LogResults oBreak2("ONU16_singleCyclePKTs");
+		    if(getParentModule()->getId() - 2 == 16 && simTime() > 3) {
+		        oBreak2 << " reportCycles : " << reportCycles << "\t singleTotalSize : " << singleTotalSize <<endl;
+		    }
+
+		    //totalUploadedBytes += singleTotalSize;
+		    scheduleAt(simTime(), sendUpstreamEvent);*/
+
+		    //---------------------------------------------------------------------------------------------------------------------//
+
+		    /*MyPacket * pkt = check_and_cast<MyPacket *>(readyQueue.pop());  //testing with another function.
+		    MyPacket * catchPkt;
+		    pkt->setSrcAddr(getParentModule()->getId());
+		    pkt->setDestAddr(olt->getId());
+
+		    catchPkt = PktCount(pkt, length);
+
+		    totalUploadedBytes += singleTotalSize;
+		    send(catchPkt, upO[onuStayChannel]); */
+
+		    /*if (pkt->getKind() != MPCP_TYPE)  //testing with another function, This if is not important.
+		        totalUploadedBytes += singleTotalSize;
+            send(pkt, upO[onuStayChannel]);*/
+
+		    //scheduleAt(simTime(), sendUpstreamEvent);
+
+		    //--------------------------------------------------------------------------------------------------------------------//
+
+			cModule *olt = getSimulation()->getModuleByPath("EPON.olt");  //The most original source code.
+			MyPacket * pkt = check_and_cast<MyPacket *>(readyQueue.pop());
 			pkt->setSrcAddr(getParentModule()->getId());
-			pkt->setDestAddr(olt->getId());*/
+			pkt->setDestAddr(olt->getId());
 
 			//The doc shows how many data upload from ONU16. The numbers are as same as LocalNetwork.cc's len.
 			/*LogResults oBreak("ONU16_eachUploadedBytes_QueuePKT");
@@ -111,11 +139,10 @@ void Classifier::handleMessage(cMessage *msg) {
 			    oBreak << " reportCycles : " << reportCycles << "\t ONU16_UploadedBytes : " << pkt->getByteLength() << endl;
 			}*/
 
-
-			/*if (pkt->getKind() != MPCP_TYPE)
+			if (pkt->getKind() != MPCP_TYPE)  //The most original source code.
 				totalUploadedBytes += pkt->getByteLength();
 			send(pkt, upO[onuStayChannel]);
-			scheduleAt(simTime(), sendUpstreamEvent);*/
+			scheduleAt(simTime(), sendUpstreamEvent);
 		}
 		else if (msg == sendUpstreamEvent && readyQueue.isEmpty()) {
 			int curSize = 0;
@@ -156,7 +183,8 @@ void Classifier::handleMessage(cMessage *msg) {
 		}
 	}
 	else if (msg->getArrivalGate() == upI || msg->getArrivalGate() == up2I || msg->getArrivalGate() == up3I || msg->getArrivalGate() == up4I) { // send from localNetwork (upstream)
-		PushIntoBuffer(check_and_cast<MyPacket *>(msg));
+	    //check_and_cast<MyPacket *>(msg)-> setByteLength(singleTotalSize); //pkt->setByteLength(singleTotalSize)
+	    PushIntoBuffer(check_and_cast<MyPacket *>(msg));
 	}
 	else if (msg->getArrivalGate() == downI || msg->getArrivalGate() == down2I || msg->getArrivalGate() == down3I || msg->getArrivalGate() == down4I) { // send from ONU scheduler (downstream)
 		if (msg->getKind() == MPCP_TYPE) {
@@ -207,11 +235,11 @@ void Classifier::finish() {
 }
 
 void Classifier::ProcessGate(MPCPGate *gt) {
-
+    //highPriBufferSize = singleTotalSize;
 	cycle = gt->getCycleZ();
-	uint32_t upQueueTotalLen = highPriBufferSize + lowPriBufferSize;
+	int64_t upQueueTotalLen = highPriBufferSize + lowPriBufferSize;
 	uint32_t downstreamLen = gt->getDownLength();
-	uint32_t grantUpLen = gt->getUpLength();
+	int64_t grantUpLen = gt->getUpLength();
 	uint32_t curMode = pwCtrler->GetEnergyMode();
 	uint16_t channel = gt->getTransmitChannel();
 	simtime_t MS = pow(10, -3);
@@ -220,15 +248,15 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 	bool planToDoze = false;
 	bool upQueueEmpty = (pktBuffer[0].isEmpty() && pktBuffer[1].isEmpty()) ? true : false;
 	bool downQueueEmpty = (gt->getQueueLength(0) == 0 && gt->getQueueLength(1) == 0) ? true : false;
-	grantUpOld = grantUpLen;
+	//grantUpOld = grantUpLen;
 
 	if (onuStayChannel != channel) {
 		needTuning = true;
 		onuStayChannel = channel;
 	}
-	if (grantUpLen > upQueueTotalLen) {
+	/*if (grantUpLen > upQueueTotalLen) {
 		grantUpLen = upQueueTotalLen;
-	}
+	}*/
 	if (grantUpLen > downstreamLen)
 		downstreamLen = grantUpLen;
 
@@ -249,8 +277,16 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 
 
 		///Added!
+		int64_t realRequest = 0;
+		realRequest = upQueueTotalLen - grantUpLen;
+
+		LogResults checkUpTotal("ONU16_checkUpQueueTotalLen");
+		if(getParentModule()->getId() - 2 == 16 && simTime() > 8) {
+		    checkUpTotal << " reportCycles : " << reportCycles << " upQueueTotalLen : " << upQueueTotalLen << " grantUpLen : " << grantUpLen << " RequestSize : " << realRequest << endl;
+		}
+
 		PopBuffer(grantUpLen);
-		SendReport(ACTIVE, upQueueTotalLen - grantUpLen);
+		SendReport(ACTIVE, realRequest); //The place cause error.
 		prevTriMode = ACTIVE;
 
 		/* Hide it!
@@ -406,11 +442,13 @@ void Classifier::GotHighPriWakeUp() {
 }
 
 void Classifier::PushIntoBuffer(MyPacket *pkt) {
+    //pkt->setByteLength(singleTotalSize);
 	switch (pkt->getPriority()) {
 		case 0:     // High priority
 			if (highPriBufferSize < bufferLimit) {
 				highPriBufferSize += pkt->getByteLength();
-				pktBuffer[0].insert(pkt);
+				//pkt->getByteLength();
+				pktBuffer[0].insert(pkt); //pkt
 			}
 			else
 				delete pkt;
@@ -463,7 +501,7 @@ uint32_t Classifier::PopBuffer(uint32_t grantSize) {
 	return totalSize;
 }
 
-MyPacket * Classifier::SendReport(uint16_t mode, uint32_t bufferSize) { // we report once we recerived gate msg, so you must remember to minus the buffer size with grant size here
+MyPacket * Classifier::SendReport(uint16_t mode, int64_t bufferSize) { // we report once we recerived gate msg, so you must remember to minus the buffer size with grant size here
 	MPCPReport * rep = new MPCPReport();
 	uint32_t curMode = pwCtrler->GetEnergyMode();
 
@@ -503,4 +541,17 @@ void Classifier::CheckHighPriBuffer() {
 
 	if (pwCtrler->GetEnergyMode() != ACTIVE && !checkHPQueue->isScheduled() && !pwCtrler->GetIsIntra() && !pwCtrler->GetIsInter())
 		scheduleAt(simTime(), checkHPQueue);    //check high priority queue
+}
+
+MyPacket * Classifier::PktCount(MyPacket *pkt, int length) {
+    int i;
+    for (i = 0; i < length; i++) {
+        singleTotalSize += pkt->getByteLength();
+        LogResults oBreak2("ONU16_singleCyclePKTs");
+        if(getParentModule()->getId() - 2 == 16 && simTime() > 3) {
+            oBreak2 << " reportCycles : " << reportCycles << "\t Queue's i : " << i << "\t singleTotalSize : " << singleTotalSize <<endl;
+        }
+    }
+
+    return pkt;
 }

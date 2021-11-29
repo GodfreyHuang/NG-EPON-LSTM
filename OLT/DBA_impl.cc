@@ -147,6 +147,10 @@ void DBA::GrantWindowToOnu(uint32_t idx) {
         LogResults o16R("ONU16_onuRequestSize");
         o16R << "cycleFromZero : " << cycleFromZero << "\t ONU16_onuRequestSize : " << onuRequestSize[idx] << endl;
     }
+    ///----------Only use on cc & linear-------------------
+    if(onuRequestSize[idx] < 0)
+        onuRequestSize[idx] = 0;
+    ///----------------------------------------------------
 	totalReqCount[idx]++;
 	if (onuRequestSize[idx] > maxReqSizeOfOnu[idx]) {
 		maxReqSizeOfOnu[idx] = onuRequestSize[idx];
@@ -191,16 +195,30 @@ void DBA::GrantWindowToOnu(uint32_t idx) {
 }
 
 void DBA::GrantUpload(uint32_t idx){
+    //LogResults gutest1("ONU_16_gutestMTW");
     if (bufferSizeToMTW[idx] > 0.0f) {
-        if (bufferSizeToMTW[idx] >= 1.0f)
-            grantUp[idx] = MTW;
+        if (bufferSizeToMTW[idx] >= 1.0f) {
+            if ( onuRequestSize[idx] + 8000 < MTW )
+                grantUp[idx] = (onuRequestSize[idx] + 8000);
+            else
+                grantUp[idx] = MTW;
+            //grantUp[idx] = MTW;
+            //if(idx == 16)
+            //    gutest1 << " cycleFromZero : " << cycleFromZero << " bufferSizeToMTW_1 > 0.0f "  << endl;
+        }
         else if (bufferSizeToMTW[idx] < 1.0f) {
             grantUp[idx] = bufferSizeToMTW[idx] * MTW;
         }
     }
     else if (bufferSizeToMTW[idx] == 0.0f) {
         if (onuRequestSize[idx] >= MTW) {
-            grantUp[idx] = MTW;
+            if ( onuRequestSize[idx] + 8000 < MTW )
+                grantUp[idx] = (onuRequestSize[idx] + 8000);
+            else
+                grantUp[idx] = MTW;
+            //grantUp[idx] = MTW;
+            //if(idx == 16)
+            //    gutest1 << " cycleFromZero : " << cycleFromZero << " bufferSizeToMTW_2 > 0.0f "  << endl;
         }
         else {
             /*
@@ -286,7 +304,7 @@ void DBA::GrantUpload(uint32_t idx){
                 */
                 ///*
                 if ( onuRequestSize[idx] + 8000 < MTW )
-                    grantUp[idx] = onuRequestSize[idx] + 8000;
+                    grantUp[idx] = (onuRequestSize[idx] + 8000);
                 else
                     grantUp[idx] = MTW;
                 //*/
@@ -367,8 +385,8 @@ void DBA::GrantUpload(uint32_t idx){
     {
         op3 << "cycleCount : " << cycleCount << " cycleFromZero : "<< cycleFromZero << " MTW : " << MTW  << endl;
     }
-    LogResults op4("bufferSizeToMTW_test");
-    op4 << "idx : " << idx << " bufferSizeToMTW : " << bufferSizeToMTW[idx] << " MTW : " << MTW  << endl;
+    //LogResults op4("bufferSizeToMTW_test");
+    //op4 << "idx : " << idx << " bufferSizeToMTW : " << bufferSizeToMTW[idx] << " MTW : " << MTW  << endl;
 
     // counting the error of predictions.
     LogResults op5("ErrorCounter_Full_ONU16");
@@ -384,6 +402,12 @@ void DBA::GrantUpload(uint32_t idx){
         //op6 << "cycleNum8to11 : " << cycleNum8to11 << " currentError8to11 : "<< currentError8to11 << " averageTotalError8to11_PerCycle : " << averageTotalError8to11  << " Standard_Deviation8to11_PerCycle : " << SD8to11 << " Rerror : " << Rerror << endl;
         op6 << "cycleNum8to11 : " << cycleNum8to11 << "\t grantUpold : " << grantUpold[idx] << "\t currentError8to11 : "<< currentError8to11 << "\t Rerror : " << Rerror << endl;
     }
+    LogResults op7("GrantUp_ONU16");
+      if( simTime() > 8  && idx == 16 )
+      {
+            //op6 << "cycleNum8to11 : " << cycleNum8to11 << " currentError8to11 : "<< currentError8to11 << " averageTotalError8to11_PerCycle : " << averageTotalError8to11  << " Standard_Deviation8to11_PerCycle : " << SD8to11 << " Rerror : " << Rerror << endl;
+            op7 << "cycleFromZero : " << cycleFromZero << "\t grantUpold : " << grantUpold[idx] << endl;
+      }
 
     grantUpold[idx] = grantUp[idx];
     if (onuRequestSize[idx] <= 0)
@@ -619,7 +643,7 @@ void DBA::StartTransmission() {
 		scheduleAt(simTime(), sendCHDownstreamEvent[i]);
 }
 
-void DBA::MakeGateMsg(uint32_t idx, uint32_t grantUpLen, uint32_t grantDownLen) {
+void DBA::MakeGateMsg(uint32_t idx, int64_t grantUpLen, uint32_t grantDownLen) {
 	MPCPGate * gt = new MPCPGate("MPCPGate", MPCP_TYPE);
 	gt->setOnuIndex(idx);
 	gt->setOpcode(MPCP_GATE);
@@ -805,7 +829,7 @@ void DBA::RecordActiveChTimeLen() { // record time length of each amounts of act
 
 void DBA::ProcessReport(MPCPReport * rep) { // receive REPORT message and reset the waiting REPORT flag for xth ONU
     uint16_t onuIdx = rep->getSrcAddr() - 2;
-    onuRequestSize[onuIdx] = rep->getRequestSize();
+    onuRequestSize[onuIdx] = rep->getRequestSize();  //The place that onuRequestSize define.
 
     if (waitingReport[onuIdx]) {
         waitingReport[onuIdx] = false;

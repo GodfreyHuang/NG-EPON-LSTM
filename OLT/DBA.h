@@ -30,7 +30,7 @@ private:
 	vector<cQueue> readyQueue;
 	vector<cQueue> tempQueue;
 	vector<int> chAllocatedToOnu;
-	vector<int32_t> onuRequestSize;
+	vector<int64_t> onuRequestSize;
 	vector<int32_t> onunow;
 	vector<int32_t> onuold;
 	vector<int32_t> grantUpold;
@@ -50,7 +50,8 @@ private:
 	map<int, vector<int>> onuTxOrder;
 	map<uint16_t, uint32_t> accumulateUpstreamBytes, accumulateDownBufferBytes;
 	map<uint32_t, bool> isDownEnd, waitingReport, gateSent;
-	map<uint32_t, uint32_t> grantDown, grantUp, minReqSizeOfOnu, maxReqSizeOfOnu, noReqCount, totalReqCount;
+	map<uint32_t, uint32_t> grantDown, minReqSizeOfOnu, maxReqSizeOfOnu, noReqCount, totalReqCount;
+	map<uint32_t, int64_t> grantUp;
 	map<uint32_t, int> largerGrant;
 	map<uint16_t, vector<cQueue> > buffer; // [module id][priority] = packet queue
 	map<uint16_t, vector<uint32_t> > bufferSize; // [module id][priority] = packet queue size
@@ -112,7 +113,7 @@ private:
 	void AllocChToOnu();
 	void SetEndOfCycle();
 	void StartTransmission();
-	void MakeGateMsg(uint32_t idx, uint32_t grantUpLen, uint32_t downLength);
+	void MakeGateMsg(uint32_t idx, int64_t grantUpLen, uint32_t downLength);
 	void PushTempToReady(uint32_t idx);
 	void RecordGateInfo(uint16_t idx);
 	void SetAsHeavyOnu(uint32_t idx);

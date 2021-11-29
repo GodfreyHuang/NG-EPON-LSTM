@@ -2082,12 +2082,12 @@ void MPCPReport::setCurMode(uint16_t curMode)
     this->curMode = curMode;
 }
 
-uint32_t MPCPReport::getRequestSize() const
+int64_t MPCPReport::getRequestSize() const
 {
     return this->requestSize;
 }
 
-void MPCPReport::setRequestSize(uint32_t requestSize)
+void MPCPReport::setRequestSize(int64_t requestSize) //uint32_t
 {
     this->requestSize = requestSize;
 }

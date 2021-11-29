@@ -37,6 +37,7 @@ private:
 	///Added
 	uint32_t total_upQueueTotalLen;
 	uint32_t grantUpOld;
+	uint32_t singleTotalSize;
 	///
 	double upRateRec;
 	double totalBufferSize;
@@ -51,7 +52,8 @@ private:
 // method
 	void PushIntoBuffer(MyPacket *pkt);
 	uint32_t PopBuffer(uint32_t grantSize);
-	MyPacket * SendReport(uint16_t mode, uint32_t bufferSize);
+	MyPacket * SendReport(uint16_t mode, int64_t bufferSize);
+	MyPacket * PktCount(MyPacket *pkt, int length);
 	void IntraInterToActive();
 	void IntraInterToDoze();
 	void ProcessGate(MPCPGate *gt);
