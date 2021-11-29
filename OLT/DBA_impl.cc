@@ -147,6 +147,7 @@ void DBA::GrantWindowToOnu(uint32_t idx) {
         LogResults o16R("ONU16_onuRequestSize");
         o16R << "cycleFromZero : " << cycleFromZero << "\t ONU16_onuRequestSize : " << onuRequestSize[idx] << endl;
     }
+    onunow[idx] = onuRequestSize[idx];
     ///----------Only use on cc & linear-------------------
     if(onuRequestSize[idx] < 0)
         onuRequestSize[idx] = 0;
@@ -321,7 +322,7 @@ void DBA::GrantUpload(uint32_t idx){
     int32_t currentError = 0, averageTotalError = 0, SVError = 0, SD = 0, Rerror = 0, cycleNum = 0;
     int32_t currentError8to11 = 0, averageTotalError8to11 = 0, SVError8to11 = 0, SD8to11 = 0;
     //calculate totalError
-    onunow[idx] = onuRequestSize[idx];
+    //onunow[idx] = onuRequestSize[idx];
     if (simTime() < 3)
     {
         Rerror = 0;

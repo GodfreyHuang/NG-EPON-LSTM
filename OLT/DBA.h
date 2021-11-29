@@ -31,9 +31,9 @@ private:
 	vector<cQueue> tempQueue;
 	vector<int> chAllocatedToOnu;
 	vector<int64_t> onuRequestSize;
-	vector<int32_t> onunow;
-	vector<int32_t> onuold;
-	vector<int32_t> grantUpold;
+	vector<int64_t> onunow;
+	vector<int64_t> onuold;
+	vector<int64_t> grantUpold;
 	vector<simtime_t> useChAmountTimeLen;
 	vector<uint32_t> gateCountOfOnu;
 	vector<double> totalDownBufferSize;
