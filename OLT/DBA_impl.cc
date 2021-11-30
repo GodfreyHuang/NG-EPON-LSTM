@@ -188,24 +188,27 @@ void DBA::GrantWindowToOnu(uint32_t idx) {
 	}
 	thisCycleTotalGrantSize += largerGrant[idx]; // for OpenChannel()
 //check ONURequestSize's number
-	LogResults optest1("ONU_16_onuRequestSize");
+	/*LogResults optest1("ONU_16_onuRequestSize");
 	if( idx == 16 )
     {
 	    optest1 << " cycleFromZero : " << cycleFromZero << " onuRequestSize : " << onuRequestSize[idx]  << endl;
-	}
+	}*/
 }
 
 void DBA::GrantUpload(uint32_t idx){
-    //LogResults gutest1("ONU_16_gutestMTW");
+    LogResults gutest1("ONU_16_gutestMTW");
     if (bufferSizeToMTW[idx] > 0.0f) {
         if (bufferSizeToMTW[idx] >= 1.0f) {
-            if ( onuRequestSize[idx] + 8000 < MTW )
-                grantUp[idx] = (onuRequestSize[idx] + 8000);
+            if (cycleCount > 0)  // when simtime = 8s, start DBA!
+                DecideGrantUp(idx);
             else
-                grantUp[idx] = MTW;
-            //grantUp[idx] = MTW;
-            //if(idx == 16)
-            //    gutest1 << " cycleFromZero : " << cycleFromZero << " bufferSizeToMTW_1 > 0.0f "  << endl;
+                if (onuRequestSize[idx] >= MTW) // MTW limit.
+                    grantUp[idx] = MTW;
+                else                            // 0~8s, limit base.
+                    grantUp[idx] = onuRequestSize[idx];
+            //grantUp[idx] = MTW; <-----original code
+            if(idx == 16)                       //check which if the simulation go into.
+                gutest1 << " cycleFromZero : " << cycleFromZero << " bufferSizeToMTW_1 > 0.0f "  << endl;
         }
         else if (bufferSizeToMTW[idx] < 1.0f) {
             grantUp[idx] = bufferSizeToMTW[idx] * MTW;
@@ -213,13 +216,10 @@ void DBA::GrantUpload(uint32_t idx){
     }
     else if (bufferSizeToMTW[idx] == 0.0f) {
         if (onuRequestSize[idx] >= MTW) {
-            if ( onuRequestSize[idx] + 8000 < MTW )
-                grantUp[idx] = (onuRequestSize[idx] + 8000);
-            else
-                grantUp[idx] = MTW;
-            //grantUp[idx] = MTW;
-            //if(idx == 16)
-            //    gutest1 << " cycleFromZero : " << cycleFromZero << " bufferSizeToMTW_2 > 0.0f "  << endl;
+            //DecideGrantUp(idx);
+            grantUp[idx] = MTW; //<-----original code
+            if(idx == 16)
+                gutest1 << " cycleFromZero : " << cycleFromZero << " bufferSizeToMTW_2 > 0.0f "  << endl;
         }
         else {
             /*
@@ -304,10 +304,9 @@ void DBA::GrantUpload(uint32_t idx){
                     grantUp[idx] = MTW;
                 */
                 ///*
-                if ( onuRequestSize[idx] + 8000 < MTW )
-                    grantUp[idx] = (onuRequestSize[idx] + 8000);
-                else
-                    grantUp[idx] = MTW;
+                DecideGrantUp(idx);
+                if(idx == 16)
+                    gutest1 << " cycleFromZero : " << cycleFromZero << " bufferSizeToMTW_3 > 0.0f "  << endl;
                 //*/
             }
             else
@@ -826,6 +825,85 @@ void DBA::RecordActiveChTimeLen() { // record time length of each amounts of act
 		useChAmountTimeLen[prevActiveCh - 1] += simTime() - lastRecordChTime;
 	}
 	lastRecordChTime = simTime();
+}
+
+void DBA::DecideGrantUp(uint32_t idx) { //cc, linear, LSTM
+    ///----------constant credit-----------
+    /*
+    if ( onuRequestSize[idx] + 8000 < MTW )
+        grantUp[idx] = (onuRequestSize[idx] + 8000);
+    else
+        grantUp[idx] = MTW;
+    */
+
+    ///----------linear credit-------------
+    ///*
+    if ( onuRequestSize[idx] * 1.3 < MTW )
+        grantUp[idx] = (onuRequestSize[idx]  * 1.3);
+    else
+        grantUp[idx] = MTW;
+    //*/
+
+    //-----------LSTM model----------------
+    /*
+    LogResults try_o("Show_Timesteps");      //THE PLACE WE PREDICT WITH LSTM.
+    int x = cycleCount % 10; // t = 2         //t = timesteps
+    //timesteps[idx][x] = onuRequestSize[idx];
+    if (x == 0)
+        timesteps[idx][1] = onuRequestSize[idx]; // t - 1 = 1
+    else
+        timesteps[idx][x-1] = onuRequestSize[idx];
+    try_o << "cycleCount : " << cycleCount << ", onuRequestSize[idx] : " << onuRequestSize[idx]<< ", idx  : " << idx  << endl;
+    try_o << "Timesteps[idx][1] : " << timesteps[idx][0] << ", Timesteps[idx][2] : " << timesteps[idx][1] << ", Timesteps[idx][3] : " << timesteps[idx][2] << ", Timesteps[idx][4] : " << timesteps[idx][3] << ", Timesteps[idx][5] : " << timesteps[idx][4] <<", Timesteps[idx][6] : " << timesteps[idx][5] << ", Timesteps[idx][7] : " << timesteps[idx][6] << ", Timesteps[idx][8] : " << timesteps[idx][7] << ", Timesteps[idx][9] : " << timesteps[idx][8] << ", Timesteps[idx][10] : " << timesteps[idx][9] << endl;
+
+
+    //timesteps[idx][0] = onuRequestSize[idx];  //when timesteps  = 1, only use this.
+
+    LogResults o6("keras_model_2021_1115_In_DBA_1_ONUss");
+    const auto model = fdeep::load_model("1110_8s_U12D02_1029081model.json"); //TimeStep=2 U24D02  keras_model_TimeStepIs_2_U12D02_2021_0618.json
+
+
+    vector<float> vec;
+    //U08D02 : 444363.0
+    //U12D02 : 404807.0
+    //U16D02 : 325693.0
+    //U19.2D02:565807.0
+    //U20D02 : 545572.0
+    //U24D02 : 537837.0 [V]
+    //U32D02 : 1291561.0
+    //U64D02 : 2151135.0
+    //U96D02 : 2484647.0
+    float normalize_num = 1029081.0;  // U24D02
+    for (int i = 0; i < 10 ; i++)   // TimeStep=2
+    {
+        vec.push_back(timesteps[idx][i]/normalize_num);
+    }
+
+    const auto result = model.predict(
+        {fdeep::tensor(fdeep::tensor_shape(static_cast<std::size_t>(vec.size())), vec )}
+    );//std::cout
+    string r = fdeep::show_tensors(result);
+    string res = "";
+    for(int i = 0 ; i < r.length() ; i++)
+    {
+        if(r[i] != '[' && r[i] != ']')
+        {
+            res = res+r[i];
+        }
+    }
+    float c = std::stof(res)  ;
+
+    //o6 << "idx : " << idx << ", cycleCount : " << cycleCount << ", cycleFromZero : "<< cycleFromZero << ", show_tensors * normalize : "<<  c * normalize_num  << ", onuRequestSize[idx] : " << onuRequestSize[idx] <<   std::endl;
+
+    if ( onuRequestSize[idx] + c * normalize_num < MTW )
+        grantUp[idx] = onuRequestSize[idx] + c * normalize_num ;
+    else
+        grantUp[idx] = MTW;
+
+    o6 << "idx : " << idx << ", cycleCount : " << cycleCount << ", cycleFromZero : "<< cycleFromZero << ", show_tensors * normalize : "<<  c * normalize_num  << ", onuRequestSize[idx] : " << onuRequestSize[idx] << ", grandUp[idx] : " << grantUp[idx] <<  std::endl;
+
+    vec.erase(vec.begin(),vec.end());
+    */
 }
 
 void DBA::ProcessReport(MPCPReport * rep) { // receive REPORT message and reset the waiting REPORT flag for xth ONU

@@ -123,6 +123,7 @@ private:
 	uint32_t PushBufferToTemp(uint32_t idx);
 	uint32_t ResumePopBuffer(uint32_t idx);
 	void GoTDMA();
+	void DecideGrantUp(uint32_t idx);
 
 protected:
 	virtual void initialize();
