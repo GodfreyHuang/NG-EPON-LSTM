@@ -185,7 +185,7 @@ void DBA::GrantWindowToOnu(uint32_t idx) {
 }
 
 void DBA::GrantUpload(uint32_t idx){
-    if (bufferSizeToMTW[idx] > 0.0f) {
+    if (bufferSizeToMTW[idx] > 0.0f) {  //original source code.
         if (bufferSizeToMTW[idx] >= 1.0f)
             grantUp[idx] = MTW;
         else if (bufferSizeToMTW[idx] < 1.0f) {
