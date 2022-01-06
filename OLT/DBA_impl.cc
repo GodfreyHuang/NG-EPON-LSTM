@@ -232,8 +232,8 @@ void DBA::GrantUpload(uint32_t idx){
             }
             ////////////////
             */
-            LogResults ddd("Show_ONU_Idx");
-            ddd << "idx " << idx << endl;
+            //LogResults ddd("Show_ONU_Idx");
+            //ddd << "idx " << idx << endl;
 
 
             if( cycleCount > 0 )//&& idx == 16)  //when t = 8s, start LSTM.
@@ -318,13 +318,13 @@ void DBA::GrantUpload(uint32_t idx){
 
     }
 
-    int32_t currentError = 0, averageTotalError = 0, SVError = 0, SD = 0, Rerror = 0, cycleNum = 0;
+    int32_t currentError = 0, averageTotalError = 0, SVError = 0, SD = 0, cycleNum = 0;
     int32_t currentError8to11 = 0, averageTotalError8to11 = 0, SVError8to11 = 0, SD8to11 = 0;
     //calculate totalError
     //onunow[idx] = onuRequestSize[idx];
     if (simTime() < 3)
     {
-        Rerror = 0;
+        Rerror[idx] = 0;
     }
     else if (simTime() > 3)
     {
@@ -337,9 +337,9 @@ void DBA::GrantUpload(uint32_t idx){
             cycleNum = cycleFromZero - cycleCount3s + 1;
         }
         //calculate average.
-        Rerror = (onunow[idx] - onuold[idx] + grantUpold[idx]);
+        Rerror[idx] = (onunow[idx] - onuold[idx] + grantUpold[idx]);
         //currentError = fabs(grantUpold[idx] - onunow[idx]);
-        currentError = fabs(onuold[idx] + Rerror - grantUpold[idx]);
+        currentError = fabs(onuold[idx] + Rerror[idx] - grantUpold[idx]);
         totalError += currentError;
         averageTotalError = totalError / cycleNum;
         //calculate SD.
@@ -393,14 +393,14 @@ void DBA::GrantUpload(uint32_t idx){
     if(idx == 16)
     {
         if (simTime() > 2)
-            op5 << "cycleFromZero : " << cycleFromZero << " currentError : "<< currentError << " TotalError : "<< totalError << " cycleNum : "<< cycleNum << " averageTotalError_PerCycle : " << averageTotalError  << " Standard_Deviation_PerCycle : " << SD << " Rerror : " << Rerror << endl;
+            op5 << "cycleFromZero : " << cycleFromZero << " currentError : "<< currentError << " TotalError : "<< totalError << " cycleNum : "<< cycleNum << " averageTotalError_PerCycle : " << averageTotalError  << " Standard_Deviation_PerCycle : " << SD << " Rerror : " << Rerror[idx] << endl;
     }
 
     LogResults op6("ErrorCounter_8to11_ONU16");
     if( cycleCount > 0  && idx == 16 )
     {
         //op6 << "cycleNum8to11 : " << cycleNum8to11 << " currentError8to11 : "<< currentError8to11 << " averageTotalError8to11_PerCycle : " << averageTotalError8to11  << " Standard_Deviation8to11_PerCycle : " << SD8to11 << " Rerror : " << Rerror << endl;
-        op6 << "cycleNum8to11 : " << cycleNum8to11 << "\t grantUpold : " << grantUpold[idx] << "\t currentError8to11 : "<< currentError8to11 << "\t Rerror : " << Rerror << endl;
+        op6 << "cycleNum8to11 : " << cycleNum8to11 << "\t grantUpold : " << grantUpold[idx] << "\t currentError8to11 : "<< currentError8to11 << "\t Rerror : " << Rerror[idx] << endl;
     }
     LogResults op7("GrantUp_ONU16");
       if( simTime() > 8  && idx == 16 )
@@ -426,6 +426,7 @@ void DBA::GrantDownload(uint32_t idx){
 	if (onutbl->GetEntry(idx)->mode != SLEEP) {
 		grantDown[idx] = PushBufferToTemp(idx);
 
+		/*
 		LogResults op("ONU_16_GrantDownLoadSizePerCycle");
 		if( cycleCount > 0 && idx == 16 )
 		{
@@ -436,6 +437,7 @@ void DBA::GrantDownload(uint32_t idx){
 		{
 		    op2 << "ONU[" << idx << "]. "<< "cycleFromZero : " << cycleFromZero << " cycleCount : " << cycleCount << " grantDown: " << grantDown[idx] << endl;
 		}
+		*/
 	}
 	else {
 		sleepNoGrantCount++;
@@ -830,37 +832,37 @@ void DBA::RecordActiveChTimeLen() { // record time length of each amounts of act
 void DBA::DecideGrantUp(uint32_t idx) { //cc, linear, LSTM
     ///----------constant credit-----------
     /*
-    if ( onuRequestSize[idx] + 8000 < MTW )
-        grantUp[idx] = (onuRequestSize[idx] + 8000);
+    if ( onuRequestSize[idx] + 6000 < MTW )
+        grantUp[idx] = (onuRequestSize[idx] + 6000);
     else
         grantUp[idx] = MTW;
     */
 
     ///----------linear credit-------------
-    ///*
-    if ( onuRequestSize[idx] * 1.3 < MTW )
-        grantUp[idx] = (onuRequestSize[idx]  * 1.3);
+    /*
+    if ( onuRequestSize[idx] * 1.1 < MTW )
+        grantUp[idx] = (onuRequestSize[idx]  * 1.1);
     else
         grantUp[idx] = MTW;
-    //*/
+    */
 
     //-----------LSTM model----------------
-    /*
+    ///*
     LogResults try_o("Show_Timesteps");      //THE PLACE WE PREDICT WITH LSTM.
     int x = cycleCount % 10; // t = 2         //t = timesteps
     //timesteps[idx][x] = onuRequestSize[idx];
     if (x == 0)
-        timesteps[idx][1] = onuRequestSize[idx]; // t - 1 = 1
+        timesteps[idx][1] = Rerror[idx]; // t - 1 = 1
     else
-        timesteps[idx][x-1] = onuRequestSize[idx];
+        timesteps[idx][x-1] = Rerror[idx];
     try_o << "cycleCount : " << cycleCount << ", onuRequestSize[idx] : " << onuRequestSize[idx]<< ", idx  : " << idx  << endl;
     try_o << "Timesteps[idx][1] : " << timesteps[idx][0] << ", Timesteps[idx][2] : " << timesteps[idx][1] << ", Timesteps[idx][3] : " << timesteps[idx][2] << ", Timesteps[idx][4] : " << timesteps[idx][3] << ", Timesteps[idx][5] : " << timesteps[idx][4] <<", Timesteps[idx][6] : " << timesteps[idx][5] << ", Timesteps[idx][7] : " << timesteps[idx][6] << ", Timesteps[idx][8] : " << timesteps[idx][7] << ", Timesteps[idx][9] : " << timesteps[idx][8] << ", Timesteps[idx][10] : " << timesteps[idx][9] << endl;
 
 
     //timesteps[idx][0] = onuRequestSize[idx];  //when timesteps  = 1, only use this.
 
-    LogResults o6("keras_model_2021_1115_In_DBA_1_ONUss");
-    const auto model = fdeep::load_model("1110_8s_U12D02_1029081model.json"); //TimeStep=2 U24D02  keras_model_TimeStepIs_2_U12D02_2021_0618.json
+    LogResults o6("keras_model_2022_0105_In_DBA_1_ONUss");
+    const auto model = fdeep::load_model("1110_8s_U08D02_516053model.json"); //TimeStep=2 U24D02  keras_model_TimeStepIs_2_U12D02_2021_0618.json
 
 
     vector<float> vec;
@@ -873,7 +875,7 @@ void DBA::DecideGrantUp(uint32_t idx) { //cc, linear, LSTM
     //U32D02 : 1291561.0
     //U64D02 : 2151135.0
     //U96D02 : 2484647.0
-    float normalize_num = 1029081.0;  // U24D02
+    float normalize_num = 516053.0;  // U24D02
     for (int i = 0; i < 10 ; i++)   // TimeStep=2
     {
         vec.push_back(timesteps[idx][i]/normalize_num);
@@ -899,11 +901,13 @@ void DBA::DecideGrantUp(uint32_t idx) { //cc, linear, LSTM
         grantUp[idx] = onuRequestSize[idx] + c * normalize_num ;
     else
         grantUp[idx] = MTW;
+    if (grantUp[idx] < 0)
+        grantUp[idx] = 0;
 
     o6 << "idx : " << idx << ", cycleCount : " << cycleCount << ", cycleFromZero : "<< cycleFromZero << ", show_tensors * normalize : "<<  c * normalize_num  << ", onuRequestSize[idx] : " << onuRequestSize[idx] << ", grandUp[idx] : " << grantUp[idx] <<  std::endl;
 
     vec.erase(vec.begin(),vec.end());
-    */
+    //*/
 }
 
 void DBA::ProcessReport(MPCPReport * rep) { // receive REPORT message and reset the waiting REPORT flag for xth ONU

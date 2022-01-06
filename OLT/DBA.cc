@@ -96,6 +96,7 @@ void DBA::initialize() {
 	InitVec(onunow, onuSize);
 	InitVec(onuold, onuSize);
 	InitVec(grantUpold, onuSize);
+	InitVec(Rerror, onuSize);
 
 	for (uint32_t i = 0; i != onuSize; i++) {
 		InitVec(buffer[i], 2);

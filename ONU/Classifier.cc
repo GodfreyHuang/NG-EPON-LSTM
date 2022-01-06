@@ -520,11 +520,13 @@ MyPacket * Classifier::SendReport(uint16_t mode, int64_t bufferSize) { // we rep
 	rep->setLastPkt(true);
 	rep->setRequestSize(bufferSize);
 
+	/*
 	if(getParentModule()->getId() - 2 == 15)
 	{
 	    LogResults owwo("SendReport_ONU15_BufferSize");
 	    owwo << "cycle : " << cycle << ", reportCycles : " << reportCycles << "\t"<< getParentModule()->getId() - 2 << "\t" << "Buffersize : " << bufferSize << endl;
 	}
+	*/
 
 	if(getParentModule()->getId() - 2 == 16)
 	{

@@ -175,7 +175,7 @@ void Scheduler::SendUpstream() {
 	sendDirect(pkt, propagationDelay, packetDuration, olt_Scheduler, "in");
 	if (pkt->getKind() != MPCP_TYPE) {
 		//if (simTime() > 1) { //Origin, Later change back
-		if (simTime() > 3) {
+		if (simTime() > 8) {
 			packetDelay[pri] += simTime() - pkt->getTimestamp();
 			if ((simTime() - pkt->getTimestamp()) > maxDelay[pri]) {
 				maxDelay[pri] = simTime() - pkt->getTimestamp();

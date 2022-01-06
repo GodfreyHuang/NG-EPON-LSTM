@@ -34,6 +34,7 @@ private:
 	vector<int64_t> onunow;
 	vector<int64_t> onuold;
 	vector<int64_t> grantUpold;
+	vector<int64_t> Rerror;
 	vector<simtime_t> useChAmountTimeLen;
 	vector<uint32_t> gateCountOfOnu;
 	vector<double> totalDownBufferSize;
