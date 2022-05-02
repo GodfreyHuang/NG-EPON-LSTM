@@ -1,0 +1,19 @@
+classifier.cc:
+
+void Classifier::ProcessGate(MPCPGate *gt)
+	底下的TriMode有註解掉，ACTIVE Mode底下的判斷upQueueEmpty
+情況取消，不必去在意。
+
+	另外，若是ONU已經傳完之後之時間與週期結束之際的間隔差距大於
+一個數值，則進行Sleep。把這個情形取消掉。
+	取消進入Doze狀態。
+
+LocalNetwork.cc:
+
+void LocalNetwork::generateDataFrame()
+	產生的uniform判斷情況取消掉，直接定義每個packet都是high priority的條件。並且insert packet到Queue之後，將high priority's packet加1
+
+TrafficGen.cc:
+void TrafficGen::generateDataFrame()
+	強制設定packets為高優先權
+
