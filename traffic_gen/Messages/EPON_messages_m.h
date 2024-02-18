@@ -318,6 +318,7 @@ class MPCPReport : public ::MPCP
   protected:
     uint16_t curMode;
     int64_t requestSize;
+    int64_t Ai;
 
   private:
     void copy(const MPCPReport& other);
@@ -340,6 +341,8 @@ class MPCPReport : public ::MPCP
     virtual void setCurMode(uint16_t curMode);
     virtual int64_t getRequestSize() const;
     virtual void setRequestSize(int64_t requestSize);
+    virtual int64_t getAi() const;
+    virtual void setAi(int64_t Ai);
 };
 
 inline void doParsimPacking(omnetpp::cCommBuffer *b, const MPCPReport& obj) {obj.parsimPack(b);}

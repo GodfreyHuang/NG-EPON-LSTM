@@ -2092,6 +2092,18 @@ void MPCPReport::setRequestSize(int64_t requestSize) //uint32_t
     this->requestSize = requestSize;
 }
 
+//
+int64_t MPCPReport::getAi() const
+{
+    return this->Ai;
+}
+
+void MPCPReport::setAi(int64_t Ai) //uint32_t
+{
+    this->Ai = Ai;
+}
+//
+
 class MPCPReportDescriptor : public omnetpp::cClassDescriptor
 {
   private:

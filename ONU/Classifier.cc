@@ -57,6 +57,7 @@ void Classifier::initialize() {
 	///Added
 	total_upQueueTotalLen = 0;
 	grantUpOld = 0;
+	totalLostPKT = 0;
 	///
 
 	lastReportTime = simTime();
@@ -64,6 +65,8 @@ void Classifier::initialize() {
 	totalBufferSize = 0;
 	maxQueueSize = 0;
 	tuningCount = 0;
+	bufferOld = 0;
+	actualAi = 0;
 }
 
 void Classifier::handleMessage(cMessage *msg) {
@@ -232,12 +235,34 @@ void Classifier::finish() {
 	o6 << "cycle : " << cycle <<endl;
 	if (getParentModule()->getId() - 1 == onuSize)
 	o6 << "\n\n\n";
+// --------
+	LogResults o7("TotalLostPKTs");
+	o7 << "ONU[" << getParentModule()->getId() - 2 << "]" << " totalLostPKT : " << totalLostPKT / pow(10, 6) * 8 << " Mbits" << endl;
 }
 
 void Classifier::ProcessGate(MPCPGate *gt) {
     //highPriBufferSize = singleTotalSize;
 	cycle = gt->getCycleZ();
 	int64_t upQueueTotalLen = highPriBufferSize + lowPriBufferSize;
+	//
+	actualAi = abs(upQueueTotalLen - bufferOld);
+	/*
+    LogResults checkAi0("0604_self8G_ONUAi_ONU9_HIGH");
+    if(getParentModule()->getId() - 2 == 9 && simTime() > 3) {
+        checkAi0 << " reportCycles : " << reportCycles << " actualAi : " << actualAi << endl;
+    }
+
+    LogResults checkAi1("0604_self8G_ONUAi_ONU31_MID");
+    if(getParentModule()->getId() - 2 == 31 && simTime() > 3) {
+        checkAi1 << " reportCycles : " << reportCycles << " actualAi : " << actualAi << endl;
+    }
+
+    LogResults checkAi2("0604_self8G_ONUAi_ONU15_LOW");
+    if(getParentModule()->getId() - 2 == 15 && simTime() > 3) {
+        checkAi2 << " reportCycles : " << reportCycles << " actualAi : " << actualAi << endl;
+    }
+    */
+	//
 	uint32_t downstreamLen = gt->getDownLength();
 	int64_t grantUpLen = gt->getUpLength();
 	uint32_t curMode = pwCtrler->GetEnergyMode();
@@ -278,7 +303,7 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 
 		///Added!
 		int64_t realRequest = 0;
-		realRequest = upQueueTotalLen - grantUpLen;
+		realRequest = upQueueTotalLen - grantUpLen; //realRequest = Ri, grantUpLen = Gi - 1
 
 		LogResults checkUpTotal("ONU16_checkUpQueueTotalLen");
 		if(getParentModule()->getId() - 2 == 16 && simTime() > 8) {
@@ -312,20 +337,22 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 
 		//if (simTime() > 8)
 	    //    print repotCycles <- using LogResult.
+		/*
 		if(getParentModule()->getId() - 2 == 16) //why process_gate message is ONU 16.
 		{
 		    total_upQueueTotalLen = total_upQueueTotalLen + upQueueTotalLen;
 		    LogResults owyo2("ProcessGate_ONU16_upQueueTotalLen");
 		    owyo2 << "cycle : " << cycle << ", reportCycles : " << reportCycles << "\t"<< getParentModule()->getId() - 2 << "\t" << "upQueueTotalLen : " << total_upQueueTotalLen << endl;
 		}
+		*/
 		///*///////////////////// Added
-
+/*
 		if(getParentModule()->getId() - 2 == 16  && simTime() > 3) //compare with ONU16_onuRequestSize.
 		{
 		    LogResults owoo("ProcessGate_ONU16_3s_request");
 		    owoo << "cycle : " << cycle  << ", reportCycles : " << reportCycles << "\t"<< getParentModule()->getId() - 2 << "\t RequestSize : " << upQueueTotalLen - grantUpLen << "\t totalBufferSize : " << totalBufferSize<<"\t grantUpLen : "<< grantUpLen << "\t grantDownLen : "<<downstreamLen <<endl;
 		}
-
+*/
 		if(getParentModule()->getId() - 2 == 16)
 		{
 		    LogResults owoo("ProcessGate_ONU16_request");
@@ -334,13 +361,13 @@ void Classifier::ProcessGate(MPCPGate *gt) {
 		    LogResults owoo2("ProcessGate_ONU16_request_needTuning");
 		    owoo2 << "cycle : " << cycle  << ", reportCycles : " << reportCycles << ", needTuning : " << needTuning << endl;
 		}
-
+/*
 		if(getParentModule()->getId() - 2 != 16) //the data without ONU 16. In theory this file can be train.
 		{
 		    LogResults oo2("ProcessGate_ONUss_request");
 		    oo2 << "cycle : " << cycle << ", reportCycles : " << reportCycles << "\t" << getParentModule()->getId() - 2 << "\t RequestSize : " << upQueueTotalLen - grantUpLen << "\t totalBufferSize : " << totalBufferSize<<"\t grantUpLen : "<< grantUpLen << "\t grantDownLen : "<<downstreamLen <<endl;
 		}
-
+*/
 
 		///////////////////////*/
 	}
@@ -450,8 +477,10 @@ void Classifier::PushIntoBuffer(MyPacket *pkt) {
 				//pkt->getByteLength();
 				pktBuffer[0].insert(pkt); //pkt
 			}
-			else
-				delete pkt;
+			else {
+			    totalLostPKT += pkt->getByteLength();
+			    delete pkt;
+			}
 			break;
 		case 1:     // Low priority
 			if (lowPriBufferSize < bufferLimit) {
@@ -519,6 +548,9 @@ MyPacket * Classifier::SendReport(uint16_t mode, int64_t bufferSize) { // we rep
 	rep->setByteLength(64);
 	rep->setLastPkt(true);
 	rep->setRequestSize(bufferSize);
+	rep->setAi(actualAi);
+
+	bufferOld = highPriBufferSize + lowPriBufferSize;
 
 	/*
 	if(getParentModule()->getId() - 2 == 15)

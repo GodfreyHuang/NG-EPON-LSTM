@@ -31,6 +31,7 @@ private:
 	vector<cQueue> tempQueue;
 	vector<int> chAllocatedToOnu;
 	vector<int64_t> onuRequestSize;
+	vector<int64_t> onuAi; //add 20220426
 	vector<int64_t> onunow;
 	vector<int64_t> onuold;
 	vector<int64_t> grantUpold;
@@ -45,7 +46,8 @@ private:
 	vector<int> remainSpaceOfCh;
 
 	/////// Added 20210611
-	map<uint32_t, vector<uint32_t>> timesteps;
+	map<uint32_t, vector<uint32_t>> inputData1;
+	map<uint32_t, vector<uint32_t>> inputData2;
 	///////
 
 	map<int, vector<int>> onuTxOrder;
@@ -87,6 +89,7 @@ private:
 	uint64_t totalError;
 	uint64_t totalSVError;
 	uint64_t totalError8to11;
+	uint64_t totalLSTMError;
 	uint64_t totalSVError8to11;
 	//int32_t onunow;
 	//int32_t onuold;
@@ -95,7 +98,19 @@ private:
 	uint32_t cycleNum8to11;
 	uint32_t cycleCount3s;
 	uint32_t cycleCount2;
+	uint64_t currentError8to11_16;
+	uint64_t currentError8to11;
+	uint64_t currentLSTMError;
+	uint64_t currentLSTMError_16;
+	uint64_t currentErrorWithoutMTW8to11;
+    uint64_t currentErrorWithoutMTW8to11_16;
+    uint64_t totalError8to11WithoutMTW;
+	vector<int64_t> currentPredictAi;
 
+    uint32_t tooMuch;
+    uint32_t tooLittle;
+    uint32_t tooMuch2;
+    uint32_t tooLittle2;
 
 
 // methods
@@ -125,6 +140,7 @@ private:
 	uint32_t ResumePopBuffer(uint32_t idx);
 	void GoTDMA();
 	void DecideGrantUp(uint32_t idx);
+    void LSTMData(uint32_t idx);
 
 protected:
 	virtual void initialize();

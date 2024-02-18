@@ -1,12 +1,12 @@
 #
-# OMNeT++/OMNEST Makefile for NG-EPON-LSTM
+# OMNeT++/OMNEST Makefile for 2022-NG-EPON-LSTM
 #
 # This file was generated with the command:
 #  opp_makemake -f --deep -O out
 #
 
 # Name of target to be created (-o option)
-TARGET = NG-EPON-LSTM$(D)$(EXE_SUFFIX)
+TARGET = 2022-NG-EPON-LSTM$(D)$(EXE_SUFFIX)
 TARGET_DIR = .
 
 # User interface (uncomment one) (-u option)

@@ -19,7 +19,10 @@ private:
 	double offered_load, max_rate, highPriorityRatio;
 	double send_rate;
 	double pktArrivalRate;
-	int lPktCount, hPktCount;
+    //
+    double local_throughput, interpacket_time;
+    //
+    int lPktCount, hPktCount, pktCount;
 	cMessage *sendTrafficEvent, *nextArrivalEvent, *triggerEvent;
 	cQueue txQueue;
 	uint32_t onuUpBytes;
@@ -44,6 +47,10 @@ LocalNetwork::LocalNetwork() {
 	sendTrafficEvent = NULL;
 	nextArrivalEvent = NULL;
 	triggerEvent = NULL;
+    //
+    pktArrivalRate=0;
+    pktCount= 0;
+    //
 }
 
 LocalNetwork::~LocalNetwork() {
@@ -68,6 +75,11 @@ void LocalNetwork::initialize() {
 	send_rate = ini.upSendRate;
 	max_rate = 1 / send_rate;
 
+    //possion
+    local_throughput = offered_load * max_rate;
+    interpacket_time = ((((minEthFrame + maxEthFrame) / 2) * 8) / local_throughput);
+    //
+
 	// self-similar setting
 	pareto_rate = ini.paretoRate;
     alpha_on = ini.paretoAlphaOn;
@@ -87,22 +99,29 @@ void LocalNetwork::initialize() {
 	onuUpBytes = 0;
 	pktArrivalRate = 0;
     lPktCount = hPktCount = 0;
+    //
+    pktCount = 0;
+    //
 }
-
+/* //self traffic
 void LocalNetwork::handleMessage(cMessage *msg) {
 	if (offered_load == 0)
 		return;
 
 	if (msg == nextArrivalEvent) {
-		if (pareto_on && on_packet_train_length-- > 0) {
-			generateDataFrame();
-			scheduleAt(simTime() + frameTimeGap, nextArrivalEvent);
-		}
+	    if (pareto_on && on_packet_train_length-- > 0) {
+	        generateDataFrame();
+	        //self-similar setting
+	        scheduleAt(simTime() + frameTimeGap, nextArrivalEvent);
+	        //
 
-		pktArrivalRate += frameTimeGap;
+	    }
+	    //self-similar setting
+	    pktArrivalRate += frameTimeGap;
+	    //
 
-		if (!sendTrafficEvent->isScheduled())
-			scheduleAt(simTime(), sendTrafficEvent);
+	    if (!sendTrafficEvent->isScheduled())
+	        scheduleAt(simTime(), sendTrafficEvent);
 	}
 	else if (msg == triggerEvent) {
 		pareto_on = !pareto_on;
@@ -132,23 +151,118 @@ void LocalNetwork::handleMessage(cMessage *msg) {
 		}
 	}
 }
+*/
+/* //poisson traffic
+void LocalNetwork::handleMessage(cMessage *msg) {
+    if (offered_load == 0)
+        return;
+    if (msg == nextArrivalEvent) {
+        if (pareto_on && on_packet_train_length-- > 0) {
+            generateDataFrame();
+            //self-similar setting
+            //scheduleAt(simTime() + frameTimeGap, nextArrivalEvent);
+            //
+            //possion
+            scheduleAt(simTime() + exponential(interpacket_time, this->getIndex()), nextArrivalEvent);
+            //
+        }
+        //self-similar setting
+        //pktArrivalRate += frameTimeGap;
+        //
+        //possion
+        pktArrivalRate += exponential(interpacket_time, this->getIndex());
+        pktCount++;
+        //
+        if (!sendTrafficEvent->isScheduled())
+            scheduleAt(simTime(), sendTrafficEvent);
+    }
+    else if (msg == triggerEvent) {
+        pareto_on = !pareto_on;
+        if (pareto_on) {
+            on_packet_train_length = round(pareto_shifted(alpha_on, beta_on, 0, this->getIndex()));
+            next_switch = on_packet_train_length * frameTimeGap;
+            //self-similar setting
+            scheduleAt(simTime(), nextArrivalEvent);
+            //
+            //possion
+            //scheduleAt(simTime() + exponential(interpacket_time, this->getIndex()), nextArrivalEvent);
+            //
+        }
+        else {
+            cancelEvent(nextArrivalEvent);
+            off_packet_train_length = round(pareto_shifted(alpha_off, beta_off, 0, this->getIndex()));
+            next_switch = off_packet_train_length * frameTimeGap;
+        }
+        scheduleAt(simTime() + next_switch, triggerEvent);
+
+        if (!sendTrafficEvent->isScheduled()) {
+            //self-simular setting
+            scheduleAt(simTime(), sendTrafficEvent);
+            //
+            //possion
+            //scheduleAt(simTime() + exponential(interpacket_time, this->getIndex()), nextArrivalEvent);
+            //
+        }
+    }
+    else if (msg == sendTrafficEvent) {
+        if (txQueue.isEmpty())
+            return;
+        else {
+            MyPacket * pkt = check_and_cast<MyPacket *>(txQueue.pop());
+            send(pkt, "ethUp$o");
+            scheduleAt(simTime() + pkt->getBitLength() * send_rate, sendTrafficEvent);
+        }
+    }
+}
+
+*/
+///* //constant traffic
+void LocalNetwork::handleMessage(cMessage *msg) {
+    if (offered_load == 0)
+        return;
+
+    if (msg == nextArrivalEvent)
+    {
+        generateDataFrame();
+        scheduleAt(simTime() + 0.00001333, nextArrivalEvent); //CT: 8G = 0.00002, 12G = 0.00001333, 16G = 0.00001, 20G = 0.000008
+        // ----
+        pktArrivalRate += 0.00001333;
+        pktCount++;
+        // ----
+        if (!sendTrafficEvent->isScheduled())
+            scheduleAt(simTime() + 0.00001333, sendTrafficEvent);
+    }
+    else if (msg == sendTrafficEvent) {
+        if (txQueue.empty())
+            return;
+        else
+        {
+            MyPacket * pkt = check_and_cast<MyPacket *>(txQueue.pop());
+            send(pkt, "ethUp$o");
+            //scheduleAt(simTime()+pkt->getBitLength()pow(10,-8), sendTrafficEvent);   // 100 Mbps
+            scheduleAt(simTime() + 0.00001333, sendTrafficEvent);
+        }
+    }
+}
+//*/
 
 void LocalNetwork::generateDataFrame() {
 	MyPacket *job = new MyPacket("traffic");
 	job->setTimestamp();
 	int16_t hpRatio = highPriorityRatio * 1000;
 
-	uint32_t len = intuniform(minEthFrame, maxEthFrame, this->getIndex());
+	//uint32_t len = intuniform(minEthFrame, maxEthFrame, this->getIndex());
+    uint32_t len = 625;
 	job->setByteLength(len);
 	uint16_t pri = intuniform(1, 1000, this->getIndex());
 	onuUpBytes += len;
-
-	LogResults oLocal("ONU16_generateDataFrame");
-	if(this->getIndex() == 16 && simTime() > 3)
-	{
-	    oLocal << " ONU16_generateDataFrame : " << len << endl;
-	}
-
+/*
+    LogResults oLocal("ONU16_generateDataFrame");
+    if(this->getIndex() == 16)
+    {
+        oLocal << " ONU16_generateDataFrame : " << len << "\t simtime = " << simTime() << endl;
+    }
+*/
 	/*
 	if (pri > 1000 - hpRatio)
 		job->setPriority(0);
@@ -171,7 +285,7 @@ void LocalNetwork::generateDataFrame() {
 void LocalNetwork::finish() {
 	LogResults o("LocalNet");
 
-	o << "ONU[" << this->getIndex() << "] upstream: " << onuUpBytes / pow(2, 20) * 8 << "M bits" << " avgArrival=" << pktArrivalRate / (lPktCount+hPktCount) << endl;
+	o << "ONU[" << this->getIndex() << "] upstream: " << onuUpBytes / pow(10, 6) * 8 << " Mbits" << " avgArrival=" << pktArrivalRate / (lPktCount+hPktCount)  << " lamba : " << interpacket_time << endl;
 
 	IniParser& ini = IniParser::GetInstance();
 	int onuSize = ini.sizeOfONU;

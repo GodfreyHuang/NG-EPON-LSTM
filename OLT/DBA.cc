@@ -75,6 +75,7 @@ void DBA::initialize() {
     totalError = 0;
     totalSVError = 0;
     totalError8to11 = 0;
+    totalLSTMError = 0;
     totalSVError8to11 = 0;
     cycleCount8s = 0;
     cycleNum8to11 = 0;
@@ -82,7 +83,17 @@ void DBA::initialize() {
     //onuold = 0;
     //grantUpold = 0;
     cycleCount2 = 0;
-
+    currentLSTMError = 0;
+    //currentPredictAi = 0;
+    InitVec(currentPredictAi, onuSize);
+    currentLSTMError_16 = 0;
+    currentErrorWithoutMTW8to11 = 0;
+    currentErrorWithoutMTW8to11_16 = 0;
+    totalError8to11WithoutMTW = 0;
+    tooMuch = 0;
+    tooLittle = 0;
+    tooMuch2 = 0;
+    tooLittle2 = 0;
 
 	InitVec(tempQueue, onuSize);
 	InitVecConstant(takeUpSpaceOfCh, chSize, 0U);
@@ -90,6 +101,7 @@ void DBA::initialize() {
 	InitVec(useChAmountTimeLen, chSize);
 	InitVec(readyQueue, chSize);
 	InitVec(onuRequestSize, onuSize);
+	InitVec(onuAi, onuSize);
 	InitVecConstant(bufferSizeToMTW, onuSize, 0.0f);
 	InitVecConstant(gateCountOfOnu, onuSize, 0U);
 	InitVecConstant(totalDownBufferSize, onuSize, 0.0);
@@ -117,7 +129,10 @@ void DBA::initialize() {
 
 	//////Added 20210611
 	for (uint32_t i = 0 ; i != onuSize; i++){
-	    InitVecConstant(timesteps[i], 50, 0U); // Change to 20
+	    InitVecConstant(inputData1[i], 64, 0U); // Change to 20
+	}
+	for (uint32_t i = 0 ; i != onuSize; i++){
+	    InitVecConstant(inputData2[i], 64, 0U); // Change to 20
 	}
 	//////
 
@@ -243,15 +258,29 @@ void DBA::finish() {
 	o8 << "End Of Clock time : "  << clock() << endl;
 
 //---TotalError
+	/*
 	LogResults o9("TotalError_Full");
 	uint32_t averageTotalError, SD;
 	averageTotalError = totalError / (cycleFromZero);
 	SD = sqrt(totalSVError / (cycleFromZero));
 	o9 << " totalError : " << totalError << " averageTotalError_PerCycle : " << averageTotalError  << " Standard_Deviation_PerCycle : " << SD << endl;
-
+    */
+	/*
 	LogResults o10("TotalError_8to11");
 	uint32_t averageTotalError8to11, SD8to11;
 	averageTotalError8to11 = totalError8to11 / cycleNum8to11;
 	SD8to11 = sqrt(totalSVError8to11 / cycleNum8to11);
 	o10 << " totalError8to11 : " << totalError8to11 << " averageTotalError8to11_PerCycle : " << averageTotalError8to11  << " Standard_Deviation8to11_PerCycle : " << SD8to11 << endl;
+    */
+//---TotalLSTMError
+	LogResults o11("TotalLSTMError_18to25_An");
+	o11 << " Total LSTM average error( | predict Ai - actual Ai |) = " << totalLSTMError << endl;
+	//LogResults o12("TotalLSTMError_18to25_Dark");
+	o11 << " Total LSTM average error (abs(onuold[idx] - grantUp[idx] - Rerror[idx])) = " << totalError8to11 << endl;
+
+	LogResults o12("TotalLSTMErrorWithoutMTW_18to25");
+	o12 << " Total error without MTW is : " << totalError8to11WithoutMTW << endl;
+//---Too much and too little
+	LogResults o13("Too_much_and_too_little_counter");
+	o13 << "The number of predict too much: " << tooMuch << "\t The number of predict too little: " << tooLittle << endl;
 }

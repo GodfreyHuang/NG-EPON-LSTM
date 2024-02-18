@@ -48,6 +48,10 @@ private:
 	simtime_t lastReportTime;
 	simtime_t tuningTimeLen;
 	uint32_t tuningCount;
+	int64_t bufferOld;
+	int64_t actualAi;
+
+    uint64_t totalLostPKT;
 
 // method
 	void PushIntoBuffer(MyPacket *pkt);
